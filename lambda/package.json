@@ -1,0 +1,13 @@
+{
+  "name": "pantrycircuit-lambda",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.600.0",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/client-sesv2": "^3.600.0",
+    "@aws-sdk/client-secrets-manager": "^3.600.0",
+    "pg": "^8.12.0"
+  }
+}

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PantryCircuit – Know what to order before the walk-in runs low</title>
+<meta name="description" content="Inventory forecasting and purchasing recommendations for restaurants, caterers and commercial kitchens. Estimates you can inspect.">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="logo" href="#top"><i></i>PantryCircuit</a>
+  <nav class="links" aria-label="Main">
+    <a href="#features">Features</a><a href="#use-cases">Use cases</a><a href="#calculator">Calculator</a><a href="#pricing">Pricing</a>
+    <a class="btn" href="#demo">Request a demo</a>
+  </nav>
+</div></header>
+
+<main id="top">
+<section class="hero"><div class="wrap grid">
+  <div>
+    <div class="eyebrow">Inventory forecasting for commercial kitchens</div>
+    <h1>Know what to order before the walk-in runs low.</h1>
+    <p class="lead">PantryCircuit turns your sales history, recipes and stock counts into ingredient demand estimates and clear purchase recommendations, with every number traceable to its inputs.</p>
+    <div class="cta"><a class="btn orange" href="#demo">Request a demo</a><a class="btn alt" href="/app/">Open the sample dashboard</a><a class="btn alt" href="#calculator">Try the calculator</a></div>
+    <p class="small" style="margin-top:16px">Forecasts are statistical estimates, not guarantees. The sample dashboard uses fictional data.</p>
+  </div>
+  <div class="card rec-card" id="hero-card" aria-live="polite">
+    <div class="small">Sample recommendation · fictional kitchen</div>
+    <h3 id="hc-name">Loading sample…</h3>
+    <div class="big num" id="hc-qty"></div>
+    <p id="hc-why" class="small"></p>
+    <a href="/app/#purchase" class="small">See how it was calculated →</a>
+  </div>
+</div></section>
+
+<section class="alt" id="how"><div class="wrap">
+  <h2>How it works</h2>
+  <div class="grid3 steps">
+    <div class="card"><h3>Connect your data</h3><p>Upload sales history as CSV, list recipes with portion quantities, and count stock with use-by dates.</p></div>
+    <div class="card"><h3>Forecast with real statistics</h3><p>A numerical model (day-of-week patterns plus trend) estimates dish demand. Recipes convert that into ingredient demand.</p></div>
+    <div class="card"><h3>Order with the reasoning shown</h3><p>Quantities account for usable stock, lead times, safety stock, pack sizes and minimums. Click any line to see the steps and what-ifs.</p></div>
+  </div>
+</div></section>
+
+<section id="features"><div class="wrap">
+  <h2>What PantryCircuit does</h2>
+  <div class="grid3">
+    <div class="card"><h3>Ingredient demand forecasting</h3><p>Uses sales history, menu plans, known events and configured seasonal factors, and shows an 80% range, not a single false-precision number.</p></div>
+    <div class="card"><h3>Recipe-to-inventory intelligence</h3><p>Dish forecasts become kilograms and litres through configurable recipes and trim yield.</p></div>
+    <div class="card"><h3>Purchase recommendations</h3><p>Accounts for usable stock, inbound orders, supplier lead times and safety-stock settings.</p></div>
+    <div class="card"><h3>Waste-risk analysis</h3><p>Simulates first-expired-first-out usage to flag stock likely to pass its use-by date, and overstock beyond your cover limits.</p></div>
+    <div class="card"><h3>Supplier comparison</h3><p>Compares price, pack size, minimum order, delivery fees and lead time, and optimises across the whole basket.</p></div>
+    <div class="card"><h3>Forecast explanations</h3><p>Inputs, assumptions and sensitivity for each recommendation. Amazon Bedrock can phrase the explanation; it never produces the numbers.</p></div>
+  </div>
+  <p class="notice" style="margin-top:24px"><strong>Numbers first, language second.</strong> Quantities come from a deterministic forecasting and inventory model. A language model only rewrites results already computed, and its output is checked against the source figures.</p>
+</div></section>
+
+<section class="alt" id="use-cases"><div class="wrap">
+  <h2>Where it fits</h2>
+  <div class="grid3">
+    <div class="card"><h3>Restaurant groups</h3><p>Compare sites, consolidate supplier orders and keep purchasing rules consistent across locations.</p></div>
+    <div class="card"><h3>Caterers</h3><p>Add confirmed events as known demand so large orders are in the numbers before the prep list is written.</p></div>
+    <div class="card"><h3>Commercial &amp; contract kitchens</h3><p>Plan from cycle menus and headcounts; watch shelf life on high-volume perishables.</p></div>
+    <div class="card"><h3>Single-site restaurants</h3><p>Replace the weekly guess with a number you can check and adjust.</p></div>
+  </div>
+</div></section>
+
+<section id="calculator"><div class="wrap">
+  <h2>Purchasing calculator</h2>
+  <p class="small">Uses the same order logic as the product. Enter one ingredient; results are estimates based on your inputs.</p>
+  <div class="calc card">
+    <form id="calc-form" autocomplete="off">
+      <div class="fields">
+        <label>Average daily use (kg)<input name="avg" type="number" min="0" step="0.1" value="12"></label>
+        <label>Day-to-day variation, std dev (kg)<input name="sd" type="number" min="0" step="0.1" value="3"></label>
+        <label>Usable stock on hand (kg)<input name="stock" type="number" min="0" step="0.1" value="15"></label>
+        <label>Days until that stock expires<input name="expiry" type="number" min="1" step="1" value="3"></label>
+        <label>Already on order (kg)<input name="inbound" type="number" min="0" step="0.1" value="0"></label>
+        <label>Supplier lead time (days)<input name="lead" type="number" min="0" max="14" step="1" value="1"></label>
+        <label>Days between orders<input name="cycle" type="number" min="1" max="30" step="1" value="2"></label>
+        <label>Service level<select name="sl"><option value="0.9">90%</option><option value="0.95" selected>95%</option><option value="0.98">98%</option><option value="0.99">99%</option></select></label>
+        <label>Pack size (kg)<input name="pack" type="number" min="0.1" step="0.1" value="10"></label>
+        <label>Supplier minimum order (kg)<input name="moq" type="number" min="0" step="0.1" value="10"></label>
+        <label>Price per pack<input name="price" type="number" min="0" step="0.01" value="62"></label>
+        <label>Shelf life of a new delivery (days)<input name="shelf" type="number" min="1" step="1" value="4"></label>
+      </div>
+      <p class="err" id="calc-err" role="alert"></p>
+    </form>
+    <div id="calc-out" aria-live="polite"></div>
+  </div>
+</div></section>
+
+<section class="alt" id="pricing"><div class="wrap">
+  <h2>Pricing</h2>
+  <p class="notice">Illustrative plan structure for discussion. Final pricing is confirmed during your demo.</p>
+  <div class="plans" style="margin-top:16px">
+    <div class="card plan"><h3>Starter</h3><div class="price">$149<span class="small">/location/mo</span></div><ul class="ticks"><li>1 location</li><li>CSV sales import</li><li>Forecasts and purchase recommendations</li><li>Waste and shortage alerts</li></ul></div>
+    <div class="card plan feat"><h3>Kitchen</h3><div class="price">$399<span class="small">/location/mo</span></div><ul class="ticks"><li>Everything in Starter</li><li>Supplier comparison and basket optimisation</li><li>Forecast accuracy reports</li><li>AI-written explanations</li></ul></div>
+    <div class="card plan"><h3>Group</h3><div class="price">Custom</div><ul class="ticks"><li>Multi-location rollups</li><li>Supplier partnership programmes</li><li>Guided onboarding</li><li>SSO and audit export</li></ul></div>
+  </div>
+</div></section>
+
+<section id="demo"><div class="wrap" style="max-width:720px">
+  <h2>Request a demo</h2>
+  <form id="demo-form" class="card" novalidate>
+    <div class="fields">
+      <label>First name<input name="firstname" required autocomplete="given-name"><span class="err" data-for="firstname"></span></label>
+      <label>Last name<input name="lastname" required autocomplete="family-name"><span class="err" data-for="lastname"></span></label>
+      <label>Work email<input name="email" type="email" required autocomplete="email"><span class="err" data-for="email"></span></label>
+      <label>Business name<input name="company" required autocomplete="organization"><span class="err" data-for="company"></span></label>
+      <label>Job title<input name="jobtitle" autocomplete="organization-title"></label>
+      <label>Number of locations<input name="location_count" type="number" min="1" max="5000" value="1" required><span class="err" data-for="location_count"></span></label>
+    </div>
+    <label>Business type<select name="business_type" required><option value="">Choose…</option><option value="restaurant_group">Restaurant group</option><option value="single_restaurant">Single restaurant</option><option value="caterer">Catering business</option><option value="commercial_kitchen">Commercial / contract kitchen</option><option value="supplier_distributor">Supplier or distributor</option><option value="other">Other</option></select><span class="err" data-for="business_type"></span></label>
+    <label>What would you like to improve? (optional)<textarea name="message" rows="3" maxlength="1000"></textarea></label>
+    <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
+    <label style="font-weight:400"><input type="checkbox" name="consent" style="width:auto;margin-right:8px">I agree that PantryCircuit may contact me about this demo request and store the details I have provided.<br><span class="err" data-for="consent"></span></label>
+    <button class="btn orange" type="submit">Request demo</button>
+    <p id="demo-status" role="status" style="margin-bottom:0"></p>
+  </form>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <p>© PantryCircuit. Demo data is fictional. Forecasts and recommendations are estimates based on the data and assumptions you provide; PantryCircuit does not claim specific savings or waste reductions without measured results from your own kitchen.</p>
+</div></footer>
+<script type="module" src="assets/site.js"></script>
+</body>
+</html>

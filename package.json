@@ -1,0 +1,14 @@
+{
+  "name": "pantrycircuit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-native inventory forecasting and purchasing optimisation for commercial kitchens.",
+  "scripts": {
+    "start": "node scripts/dev-server.mjs",
+    "demo-data": "node scripts/generate-demo-data.mjs",
+    "demo": "node scripts/demo-cli.mjs",
+    "test": "node --test \"test/**/*.test.mjs\""
+  },
+  "engines": { "node": ">=20" }
+}

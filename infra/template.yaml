@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: PantryCircuit backend - PostgreSQL (RDS), S3 uploads, Lambda forecasting and notifications, Bedrock explanations. Not yet deployed or cfn-lint validated; review before use.
+
+Parameters:
+  VpcId: { Type: 'AWS::EC2::VPC::Id' }
+  PrivateSubnetIds: { Type: 'List<AWS::EC2::Subnet::Id>', Description: 'Private subnets with a NAT gateway or VPC endpoints for S3, Secrets Manager, Bedrock Runtime and SES' }
+  BedrockModelId: { Type: String, Description: 'Model or inference-profile ID enabled in your account/region for Bedrock Converse' }
+  SesFromAddress: { Type: String, Description: 'SES-verified sender address for alert digests' }
+  HubSpotPortalId: { Type: String, Default: '' }
+  HubSpotFormGuid: { Type: String, Default: '' }
+  ForecastSchedule: { Type: String, Default: 'cron(0 9 * * ? *)', Description: 'UTC; run before the kitchen ordering window' }
+  NotifySchedule: { Type: String, Default: 'cron(15 9 * * ? *)', Description: 'Keep at least 10 minutes after ForecastSchedule' }
+  WebOrigin: { Type: String, Default: 'https://example.com', Description: 'Allowed CORS origin of the website' }
+  JwtIssuer: { Type: String, Description: 'OIDC issuer (for example a Cognito user pool URL) for dashboard API auth' }
+  JwtAudience: { Type: String }
+
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    Architectures: [arm64]
+    MemorySize: 512
+    Timeout: 60
+    Environment:
+      Variables:
+        DB_HOST: !GetAtt Database.Endpoint.Address
+        DB_NAME: pantrycircuit
+        DB_SECRET_ARN: !GetAtt Database.MasterUserSecret.SecretArn
+        NODE_OPTIONS: --enable-source-maps
+
+Resources:
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: { GroupDescription: PantryCircuit database, VpcId: !Ref VpcId }
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: { GroupDescription: PantryCircuit Lambdas, VpcId: !Ref VpcId }
+  DbIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties: { GroupId: !Ref DbSecurityGroup, IpProtocol: tcp, FromPort: 5432, ToPort: 5432, SourceSecurityGroupId: !Ref LambdaSecurityGroup }
+
+  DbSubnets:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: { DBSubnetGroupDescription: PantryCircuit, SubnetIds: !Ref PrivateSubnetIds }
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: postgres
+      EngineVersion: '18'
+      DBInstanceClass: db.t4g.small
+      AllocatedStorage: '20'
+      StorageType: gp3
+      StorageEncrypted: true
+      DBName: pantrycircuit
+      MasterUsername: pantrycircuit_admin
+      ManageMasterUserPassword: true
+      DBSubnetGroupName: !Ref DbSubnets
+      VPCSecurityGroups: [!Ref DbSecurityGroup]
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: true
+      MultiAZ: false
+
+  UploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption: { ServerSideEncryptionConfiguration: [{ ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 } }] }
+      PublicAccessBlockConfiguration: { BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true }
+      LifecycleConfiguration: { Rules: [{ Id: expire-raw-uploads, Status: Enabled, ExpirationInDays: 365 }] }
+      CorsConfiguration: { CorsRules: [{ AllowedMethods: [PUT], AllowedOrigins: [!Ref WebOrigin], AllowedHeaders: ['*'], MaxAge: 3000 }] }
+  UploadsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UploadsBucket
+      PolicyDocument:
+        Statement:
+          - Sid: TlsOnly
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource: [!GetAtt UploadsBucket.Arn, !Sub '${UploadsBucket.Arn}/*']
+            Condition: { Bool: { 'aws:SecureTransport': 'false' } }
+
+  ForecastFunction:
+    Type: AWS::Serverless::Function
+    Metadata: { BuildMethod: esbuild, BuildProperties: { Format: esm, Target: es2023, EntryPoints: [forecast-scheduled.mjs], External: ['@aws-sdk/*'] } }
+    Properties:
+      CodeUri: lambda/
+      Handler: forecast-scheduled.handler
+      Timeout: 300
+      MemorySize: 1024
+      VpcConfig: { SubnetIds: !Ref PrivateSubnetIds, SecurityGroupIds: [!Ref LambdaSecurityGroup] }
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy: { SecretArn: !GetAtt Database.MasterUserSecret.SecretArn }
+      Events:
+        Daily: { Type: Schedule, Properties: { Schedule: !Ref ForecastSchedule } }
+  NotifyFunction:
+    Type: AWS::Serverless::Function
+    Metadata: { BuildMethod: esbuild, BuildProperties: { Format: esm, Target: es2023, EntryPoints: [notify-alerts.mjs], External: ['@aws-sdk/*'] } }
+    Properties:
+      CodeUri: lambda/
+      Handler: notify-alerts.handler
+      VpcConfig: { SubnetIds: !Ref PrivateSubnetIds, SecurityGroupIds: [!Ref LambdaSecurityGroup] }
+      Environment: { Variables: { SES_FROM_ADDRESS: !Ref SesFromAddress } }
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy: { SecretArn: !GetAtt Database.MasterUserSecret.SecretArn }
+        - Statement: [{ Effect: Allow, Action: 'ses:SendEmail', Resource: '*' }]
+      Events:
+        AfterForecast: { Type: Schedule, Properties: { Schedule: !Ref NotifySchedule } }
+
+  ImportFunction:
+    Type: AWS::Serverless::Function
+    Metadata: { BuildMethod: esbuild, BuildProperties: { Format: esm, Target: es2023, EntryPoints: [import-sales.mjs], External: ['@aws-sdk/*'] } }
+    Properties:
+      CodeUri: lambda/
+      Handler: import-sales.handler
+      VpcConfig: { SubnetIds: !Ref PrivateSubnetIds, SecurityGroupIds: [!Ref LambdaSecurityGroup] }
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy: { SecretArn: !GetAtt Database.MasterUserSecret.SecretArn }
+        - Statement: [{ Effect: Allow, Action: 's3:GetObject', Resource: !Sub '${UploadsBucket.Arn}/uploads/sales/*' }]
+      Events:
+        Upload:
+          Type: S3
+          Properties:
+            Bucket: !Ref UploadsBucket
+            Events: 's3:ObjectCreated:*'
+            Filter: { S3Key: { Rules: [{ Name: prefix, Value: uploads/sales/ }, { Name: suffix, Value: .csv }] } }
+
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration: { AllowOrigins: [!Ref WebOrigin], AllowMethods: [POST, OPTIONS], AllowHeaders: [content-type, authorization] }
+      DefaultRouteSettings: { ThrottlingBurstLimit: 20, ThrottlingRateLimit: 10 }
+      Auth:
+        Authorizers:
+          Jwt: { IdentitySource: '$request.header.Authorization', JwtConfiguration: { issuer: !Ref JwtIssuer, audience: [!Ref JwtAudience] } }
+  ExplainFunction:
+    Type: AWS::Serverless::Function
+    Metadata: { BuildMethod: esbuild, BuildProperties: { Format: esm, Target: es2023, EntryPoints: [explain-api.mjs], External: ['@aws-sdk/*'] } }
+    Properties:
+      CodeUri: lambda/
+      Handler: explain-api.handler
+      Timeout: 30
+      VpcConfig: { SubnetIds: !Ref PrivateSubnetIds, SecurityGroupIds: [!Ref LambdaSecurityGroup] }
+      Environment: { Variables: { BEDROCK_MODEL_ID: !Ref BedrockModelId } }
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy: { SecretArn: !GetAtt Database.MasterUserSecret.SecretArn }
+        - Statement: [{ Effect: Allow, Action: ['bedrock:InvokeModel'], Resource: '*' }]
+      Events:
+        Explain: { Type: HttpApi, Properties: { ApiId: !Ref Api, Method: POST, Path: '/recommendations/{id}/explain', Auth: { Authorizer: Jwt } } }
+  DemoRequestFunction:
+    Type: AWS::Serverless::Function
+    Metadata: { BuildMethod: esbuild, BuildProperties: { Format: esm, Target: es2023, EntryPoints: [demo-request.mjs], External: ['@aws-sdk/*'] } }
+    Properties:
+      CodeUri: lambda/
+      Handler: demo-request.handler
+      Timeout: 15
+      Environment: { Variables: { HUBSPOT_PORTAL_ID: !Ref HubSpotPortalId, HUBSPOT_FORM_GUID: !Ref HubSpotFormGuid } }
+      Events:
+        Submit: { Type: HttpApi, Properties: { ApiId: !Ref Api, Method: POST, Path: /demo-request } }
+
+Outputs:
+  ApiUrl: { Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.amazonaws.com' }
+  UploadsBucketName: { Value: !Ref UploadsBucket }
+  DatabaseEndpoint: { Value: !GetAtt Database.Endpoint.Address }
