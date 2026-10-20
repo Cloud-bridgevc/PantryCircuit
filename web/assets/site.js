@@ -62,3 +62,9 @@ dform.addEventListener('submit', async (e) => {
     status.textContent = out.errors ? 'Please fix the highlighted fields.' : 'Something went wrong. Please try again.';
   } catch { status.textContent = 'Could not send the request. Check your connection and try again.'; }
 });
+
+// Plan buttons: jump to the form and note which plan the visitor asked about.
+document.querySelectorAll('[data-plan]').forEach((a) => a.addEventListener('click', () => {
+  const m = dform.querySelector('[name=message]');
+  if (!m.value) m.value = `I'd like to talk about the ${a.dataset.plan[0].toUpperCase() + a.dataset.plan.slice(1)} plan.`;
+}));

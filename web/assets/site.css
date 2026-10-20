@@ -43,3 +43,8 @@ footer{padding:32px 0;border-top:1px solid var(--line);color:var(--muted);font-s
 .hp{position:absolute;left:-9999px}
 @media(max-width:800px){.hero .grid,.calc{grid-template-columns:1fr}nav.links a:not(.btn){display:none}.fields{grid-template-columns:1fr}section{padding:44px 0}}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .result{color:#10201a}}
+.team{text-align:center}
+.avatar{width:72px;height:72px;border-radius:50%;background:var(--forest);color:#fff;font-weight:700;font-size:1.4rem;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .avatar{color:#10201a}}
+.plan{display:flex;flex-direction:column}.plan .btn{margin-top:auto;text-align:center}
+footer a{color:var(--forest)}
