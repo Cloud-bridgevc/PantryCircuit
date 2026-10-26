@@ -5,6 +5,7 @@
   "type": "module",
   "description": "AI-native inventory forecasting and purchasing optimisation for commercial kitchens.",
   "scripts": {
+    "build": "node scripts/build.mjs",
     "start": "node scripts/dev-server.mjs",
     "demo-data": "node scripts/generate-demo-data.mjs",
     "demo": "node scripts/demo-cli.mjs",
