@@ -1,0 +1,21 @@
+{
+  "name": "PantryCircuit",
+  "short_name": "PantryCircuit",
+  "description": "Inventory forecasting and purchasing recommendations for commercial kitchens.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "var(--forest)",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

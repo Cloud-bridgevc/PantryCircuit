@@ -35,3 +35,16 @@ How inputs move it (net requirement, `npm run demo chicken_thigh`): demand ±10%
 - **Not verified:** nothing has been deployed to AWS; Bedrock and SES calls have only been exercised with fakes (set `BEDROCK_MODEL_ID` to a model you have access to); the HubSpot submission is tested with a fake `fetch` and needs your portal ID and form GUID. Without those, the dev server saves demo requests to `.local/demo-requests.jsonl`.
 - The dashboard demo runs entirely in the browser; there is no authentication or server API yet (see `docs/architecture.md`, "Not built yet").
 - Backtest accuracy on the fictional data (dish-level WAPE about 21%) says nothing about real kitchens.
+
+## Launch readiness (glow-up)
+
+- Edit the site in `web/` and run `npm run build` (it regenerates `public/`).
+- Home page: problem section with three sourced statistics, what-we-solve, comparison table, AI section, roadmap, team (founder cards) and FAQ, with scroll-reveal motion that respects reduced motion and dark mode (`web/assets/glow.css`, `glow.js`).
+- New pages: `/privacy`, `/terms` (review drafts). Footer credits the founders.
+- Ship assets: OG image, icons, favicon, manifest, sitemap, founders JSON-LD.
+
+### Content to confirm before launch
+- Contact email `hello@pantrycircuit.site` is a placeholder — create the forward or replace it.
+- Statistics (ReFED 2025 edition, US EPA 2019 Wasted Food Report) — re-check figures and links. They describe the problem; PantryCircuit makes no savings claims.
+- Founder bios describe roles only; replace with confirmed biographies.
+- Privacy notice and terms need operator details and governing law.
